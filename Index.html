@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>I Love You</title>
+    <style>
+        /* --- CSS Styles --- */
+        @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Quicksand', sans-serif;
+            background: linear-gradient(135deg, #fff0f3 0%, #ffe3ea 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            color: #5d5d5d;
+        }
+
+        .container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(255, 182, 193, 0.3);
+            backdrop-filter: blur(5px);
+            transition: all 0.5s ease;
+            max-width: 90%;
+        }
+
+        h1 {
+            font-size: 3rem;
+            color: #ff6b81;
+            margin-bottom: 10px;
+            animation: beat 1.5s infinite;
+        }
+
+        @keyframes beat {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .btn {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 10px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-family: 'Quicksand', sans-serif;
+            font-weight: bold;
+        }
+
+        .btn-yes {
+            background-color: #ff9a9e;
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 154, 158, 0.4);
+        }
+
+        .btn-yes:hover {
+            transform: translateY(-3px);
+            background-color: #ff758c;
+        }
+
+        .btn-no {
+            background-color: #a1c4fd;
+            color: white;
+            box-shadow: 0 4px 15px rgba(161, 196, 253, 0.4);
+            position: relative; /* Default relative */
+        }
+
+        /* Game Board Styles */
+        #game-screen {
+            display: none; /* Hidden initially */
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 10px;
+            margin: 20px auto;
+            justify-content: center;
+        }
+
+        .cell {
+            width: 100px;
+            height: 100px;
+            background-color: #fff;
+            border: 2px solid #ffdad9;
+            border-radius: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3rem;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .cell:hover {
+            background-color: #fff0f5;
+        }
+
+        .cell.taken {
+            cursor: default;
+        }
+
+        .status {
+            font-size: 1.5rem;
+            margin-top: 15px;
+            font-weight: bold;
+            min-height: 40px;
+        }
+
+        .heart-text { color: #ff6b81; }
+        .x-text { color: #a1c4fd; }
+
+        .hidden {
+            display: none !important;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Initial Screen -->
+    <div id="initial-screen" class="container">
+        <h1>I love you ❤️</h1>
+        <p>Do you love me?</p>
+        <div style="margin-top: 30px;">
+            <button id="btn-yes" class="btn btn-yes">I love you too</button>
+            <button id="btn-no" class="btn btn-no">I don't love you</button>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="container">
+        <h1>Let's play! ❤️</h1>
+        <p>You are <span class="heart-text">♥</span> | Bot is <span class="x-text">X</span></p>
+        
+        <div class="board" id="board">
+            <div class="cell" data-index="0"></div>
+            <div class="cell" data-index="1"></div>
+            <div class="cell" data-index="2"></div>
+            <div class="cell" data-index="3"></div>
+            <div class="cell" data-index="4"></div>
+            <div class="cell" data-index="5"></div>
+            <div class="cell" data-index="6"></div>
+            <div class="cell" data-index="7"></div>
+            <div class="cell" data-index="8"></div>
+        </div>
+
+        <div id="status-msg" class="status"></div>
+        
+        <button id="btn-restart" class="btn btn-yes hidden">Play Again</button>
+        <button id="btn-back" class="btn btn-no" style="margin-top: 10px; font-size: 0.9rem; padding: 10px 20px;">Back</button>
+    </div>
+
+    <script>
+        /* --- JavaScript Logic --- */
+
+        // DOM Elements
+        const initialScreen = document.getElementById('initial-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const btnYes = document.getElementById('btn-yes');
+        const btnNo = document.getElementById('btn-no');
+        const cells = document.querySelectorAll('.cell');
+        const statusMsg = document.getElementById('status-msg');
+        const btnRestart = document.getElementById('btn-restart');
+        const btnBack = document.getElementById('btn-back');
+
+        let boardState = ['', '', '', '', '', '', '', '', ''];
+        let gameActive = true;
+        const playerSymbol = '♥';
+        const botSymbol = 'X';
+
+        // --- 1. Initial Screen Interactions ---
+
+        // Button: I love you too
+        btnYes.addEventListener('click', () => {
+            alert("Aww 😍");
+            initialScreen.classList.add('hidden');
+            gameScreen.style.display = 'block'; // Show game
+            resetGame();
+        });
+
+        // Button: I don't love you (Teleport Logic)
+        btnNo.addEventListener('mouseover', () => {
+            const x = Math.random() * (window.innerWidth - 100);
+            const y = Math.random() * (window.innerHeight - 60);
+            
+            // We use fixed positioning relative to the body to move it anywhere on screen
+            btnNo.style.position = 'fixed';
+            btnNo.style.left = `${Math.max(0, x)}px`;
+            btnNo.style.top = `${Math.max(0, y)}px`;
+            btnNo.style.transform = 'none'; // Remove hover effects
+        });
+
+        // --- 2. Tic Tac Toe Logic ---
+
+        const winningConditions = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
+            [0, 4, 8], [2, 4, 6]             // Diagonals
+        ];
+
+        cells.forEach(cell => {
+            cell.addEventListener('click', handleCellClick);
+        });
+
+        function handleCellClick(e) {
+            const clickedCell = e.target;
+            const clickedCellIndex = parseInt(clickedCell.getAttribute('data-index'));
+
+            if (boardState[clickedCellIndex] !== '' || !gameActive) {
+                return;
+            }
+
+            // Player Move
+            makeMove(clickedCellIndex, playerSymbol);
+            
+            if (checkResult()) return;
+
+            // Bot Move (with slight delay for realism)
+            if (gameActive) {
+                setTimeout(botMove, 500);
+            }
+        }
+
+        function makeMove(index, symbol) {
+            boardState[index] = symbol;
+            const cell = document.querySelector(`.cell[data-index='${index}']`);
+            cell.textContent = symbol;
+            cell.classList.add('taken');
+            
+            // Styling specifically for X and Hearts
+            if(symbol === playerSymbol) cell.style.color = "#ff6b81";
+            else cell.style.color = "#a1c4fd";
+        }
+
+        function botMove() {
+            // Simple AI: Find empty spots and pick one randomly
+            const emptyIndices = boardState
+                .map((val, idx) => val === '' ? idx : null)
+                .filter(val => val !== null);
+
+            if (emptyIndices.length > 0) {
+                const randomIndex = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+                makeMove(randomIndex, botSymbol);
+                checkResult();
+            }
+        }
+
+        function checkResult() {
+            let roundWon = false;
+            let winner = null;
+
+            for (let i = 0; i < winningConditions.length; i++) {
+                const [a, b, c] = winningConditions[i];
+                let val1 = boardState[a];
+                let val2 = boardState[b];
+                let val3 = boardState[c];
+
+                if (val1 === '' || val2 === '' || val3 === '') {
+                    continue;
+                }
+                if (val1 === val2 && val2 === val3) {
+                    roundWon = true;
+                    winner = val1;
+                    break;
+                }
+            }
+
+            if (roundWon) {
+                gameActive = false;
+                if (winner === playerSymbol) {
+                    statusMsg.textContent = "Our love won! 🥰";
+                    statusMsg.style.color = "#ff6b81";
+                } else {
+                    statusMsg.textContent = "The love is lost 😢";
+                    statusMsg.style.color = "#555";
+                }
+                btnRestart.classList.remove('hidden');
+                return true;
+            }
+
+            if (!boardState.includes('')) {
+                gameActive = false;
+                statusMsg.textContent = "It's complicated 😅";
+                statusMsg.style.color = "#888";
+                btnRestart.classList.remove('hidden');
+                return true;
+            }
+
+            return false;
+        }
+
+        // --- 3. Navigation ---
+
+        function resetGame() {
+            boardState = ['', '', '', '', '', '', '', '', ''];
+            gameActive = true;
+            statusMsg.textContent = "";
+            btnRestart.classList.add('hidden');
+            cells.forEach(cell => {
+                cell.textContent = '';
+                cell.classList.remove('taken');
+                cell.style.color = "";
+            });
+        }
+
+        btnRestart.addEventListener('click', resetGame);
+        
+        btnBack.addEventListener('click', () =>
